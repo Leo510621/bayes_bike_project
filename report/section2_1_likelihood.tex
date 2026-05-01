@@ -1,0 +1,57 @@
+% section2_1_likelihood.tex — Module A: Yue
+\subsection{Likelihood Specification}\label{sec:likelihood}
+
+\subsubsection{Model Formulation}
+
+We model the daily rental count $y_i$ as:
+\begin{equation}
+    y_i \mid \beta_0, \beta_1, \beta_2, \sigma^2 \sim \mathcal{N}(\mu_i, \sigma^2), \quad i = 1, \ldots, n
+\end{equation}
+where
+\begin{equation}
+    \mu_i = \beta_0 + \beta_1 \cdot \texttt{temp}_i + \beta_2 \cdot \texttt{hum}_i
+\end{equation}
+
+The full likelihood is:
+\begin{equation}
+    L(\boldsymbol{\beta}, \sigma^2 \mid \mathbf{y}) = \prod_{i=1}^{n} \frac{1}{\sqrt{2\pi\sigma^2}} \exp\left( -\frac{(y_i - \mu_i)^2}{2\sigma^2} \right)
+\end{equation}
+
+\subsubsection{Why Normal and Not Poisson?}
+
+Since $y_i$ represents a count, one might initially consider a Poisson likelihood:
+\begin{equation}
+    y_i \sim \text{Poisson}(\lambda_i)
+\end{equation}
+However, the Poisson distribution requires $\text{Var}(Y) = E(Y)$. Our empirical analysis reveals severe overdispersion:
+
+% TODO: fill from overdispersion_check.txt
+\begin{quote}
+    $\bar{y} = \text{[mean\_cnt]}$, \quad $s^2 = \text{[var\_cnt]}$, \quad $\text{Var}/\text{Mean} = \text{[ratio]}$
+\end{quote}
+
+With a variance-to-mean ratio far exceeding 1, the equidispersion assumption of the Poisson is grossly violated. Using Poisson would produce artificially narrow credible intervals and overstate the precision of inference.
+
+\subsubsection{Negative Binomial as Alternative}
+
+The Negative Binomial distribution accommodates overdispersion via an additional dispersion parameter $r$:
+\begin{equation}
+    P(Y = y \mid \mu, r) = \binom{y + r - 1}{y} \left(\frac{r}{r + \mu}\right)^r \left(\frac{\mu}{r + \mu}\right)^y
+\end{equation}
+where $\text{Var}(Y) = \mu + \mu^2 / r$. As $r \to \infty$, this reduces to Poisson.
+
+While the Negative Binomial is a valid alternative for count data with overdispersion, we adopt the Normal likelihood as our primary model for the following reasons:
+\begin{enumerate}
+    \item \textbf{Central Limit Theorem}: With $\bar{y} \approx 4500$, the counts are large enough that the Normal approximation is excellent.
+    \item \textbf{Symmetry}: The empirical distribution of $y$ is approximately symmetric (see Figure~\ref{fig:cnt_hist}), consistent with Normality.
+    \item \textbf{Conjugacy}: The Normal--Inverse-Gamma conjugate structure simplifies Bayesian computation and interpretation.
+    \item \textbf{Comparability}: The Normal model enables direct comparison between OLS (frequentist) and Bayesian posterior estimates under the same distributional assumption.
+\end{enumerate}
+
+\subsubsection{Likelihood Summary}
+
+We proceed with:
+\begin{equation}
+    y_i \sim \mathcal{N}(\beta_0 + \beta_1 \cdot \texttt{temp}_i + \beta_2 \cdot \texttt{hum}_i, \; \sigma^2)
+\end{equation}
+acknowledging that a Negative Binomial formulation could be explored as a robustness check in future work.

@@ -1,0 +1,5 @@
+mean(cnt) = 4392.11
+var(cnt)  = 3746685.76
+Var/Mean ratio = 853.05
+
+Conclusion: Severe overdispersion (ratio >> 1). Poisson likelihood is inappropriate; we adopt Normal as primary and discuss Negative Binomial as alternative.
