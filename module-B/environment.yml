@@ -1,0 +1,18 @@
+name: bayes
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  # Bayesian modelling
+  - pymc>=5.10
+  - arviz>=0.17
+  # Data + plots
+  - pandas>=2.0
+  - numpy>=1.26
+  - matplotlib>=3.8
+  - seaborn>=0.13
+  - scipy>=1.11
+  # OLS baseline (Module A compatibility)
+  - statsmodels>=0.14
+  # Tests
+  - pytest>=8.0
