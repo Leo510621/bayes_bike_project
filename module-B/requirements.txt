@@ -1,0 +1,15 @@
+# Fallback for pip + venv users.
+# RECOMMENDED: use environment.yml with conda instead (PyMC ships
+# a working C++ toolchain on conda-forge; pip on Windows requires
+# manual installation of MSVC Build Tools).
+
+# Shared with Module A
+pandas==2.2.3
+numpy==1.26.4
+matplotlib==3.9.2
+scipy==1.14.1
+pytest==8.3.4
+
+# Module B additions (Bayesian modelling + posterior analysis)
+pymc>=5.10.0
+arviz>=0.17.0
