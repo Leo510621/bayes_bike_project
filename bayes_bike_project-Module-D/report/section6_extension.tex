@@ -1,0 +1,278 @@
+\section{Extension Task: Sequential Bayesian Updating}
+\label{sec:extension}
+
+\subsection{Choice of Extension and Justification}
+
+Our group selected Extension Task C: Sequential Bayesian Updating. This choice was
+motivated by three considerations. First, sequential updating is the most direct
+demonstration of the foundational Bayesian principle that the posterior from one
+analysis can serve as the prior for the next, illustrating how beliefs are rationally
+revised as evidence accumulates. Second, the subsampling strategy adopted in
+Section~\ref{sec:introduction} --- $n = 360$ observations drawn with
+\texttt{random\_state = 42} --- was deliberately designed to yield four equal
+chronological blocks of 90 observations each, approximating semi-annual windows
+over the two-year dataset and making sequential updating both natural and
+interpretable. Third, the extension required no modelling machinery beyond what was
+already developed in Core Task 1, allowing us to focus on conceptual depth rather
+than technical complexity.
+
+\subsection{Methodology}
+
+\subsubsection{Data Partitioning}
+
+The 360 subsampled observations are ordered chronologically by \texttt{dteday} and
+partitioned into four non-overlapping blocks of equal size via
+\texttt{df.iloc[i*90:(i+1)*90]} for $i = 0, 1, 2, 3$.
+Table~\ref{tab:chunks} summarises the temporal coverage and descriptive statistics
+of each block.
+
+\begin{table}[htbp]
+\centering
+\caption{Chronological data blocks used for Sequential Bayesian Updating.
+$\bar{y}$ denotes mean daily rentals; $r_{yT}$ and $r_{yH}$ denote the
+Pearson correlations of \texttt{cnt} with \texttt{temp} and \texttt{hum}
+respectively; $r_{TH}$ denotes the correlation between \texttt{temp} and
+\texttt{hum}.}
+\label{tab:chunks}
+\begin{tabular}{cllcccccc}
+\hline
+Block & Period & $n$ & $\bar{y}$ & $r_{yT}$ & $r_{yH}$ & $r_{TH}$ \\
+\hline
+1 & 2011-01-01 -- 2011-06-27 & 90 & 2773 & $+$0.889 & $+$0.165 & $+$0.226 \\
+2 & 2011-06-28 -- 2011-12-13 & 90 & 3968 & $+$0.417 & $-$0.518 & $-$0.237 \\
+3 & 2011-12-16 -- 2012-06-15 & 90 & 4641 & $+$0.821 & $-$0.054 & $+$0.246 \\
+4 & 2012-06-16 -- 2012-12-31 & 90 & 6188 & $+$0.563 & $-$0.188 & $+$0.048 \\
+\hline
+\end{tabular}
+\end{table}
+
+Several features of Table~\ref{tab:chunks} are worth noting before interpreting the
+sequential posteriors. The raw correlation $r_{yH}$ is positive in Block 1
+($+$0.165) and near zero in Block 3 ($-$0.054), in contrast to the overall
+negative relationship reported in Section~\ref{sec:introduction}. Furthermore,
+$r_{TH}$ is at most 0.246 across all blocks, ruling out severe multicollinearity
+between the two predictors as a source of instability. The heterogeneity of these
+local correlations across blocks reflects genuine seasonal variation in the
+temperature--humidity--rental relationship, a point we return to in
+Section~\ref{sec:ext_discussion}.
+
+\subsubsection{Cascading Prior Update via Moment Matching}
+
+Let $p_k(\boldsymbol{\theta})$ denote the posterior obtained after processing
+block $k$, and let $\mu_k^{(j)}$ and $s_k^{(j)}$ denote its mean and standard
+deviation for parameter $\beta_j$. The prior for block $k+1$ is constructed by
+\emph{moment matching}: the posterior summary statistics replace the
+hyperparameters of the next block's prior,
+
+\begin{equation}
+    \beta_j \mid \text{block } k+1 \;\sim\;
+    \mathcal{N}\!\left(\mu_k^{(j)},\; \bigl(s_k^{(j)}\bigr)^2\right),
+    \qquad j = 0, 1, 2,
+    \label{eq:moment_match_beta}
+\end{equation}
+
+\noindent and for the residual standard deviation,
+
+\begin{equation}
+    \sigma \mid \text{block } k+1 \;\sim\;
+    \operatorname{Half-Normal}\!\left(\mu_k^{(\sigma)}\right).
+    \label{eq:moment_match_sigma}
+\end{equation}
+
+Block 1 uses the weakly informative priors specified in Section~\ref{sec:prior}
+as its starting point:
+$\beta_j \sim \mathcal{N}(0,\,10{,}000^2)$ and
+$\sigma \sim \operatorname{Half-Normal}(3{,}000)$.
+Each block is fitted with the same NUTS configuration as Core Task 1: 4 chains,
+1{,}000 warm-up iterations (discarded as burn-in), and 2{,}000 retained draws,
+yielding 8{,}000 posterior samples per block.
+
+\subsection{Convergence Diagnostics}
+
+Before interpreting the sequential posteriors, we verify that MCMC sampling
+converged reliably for every block. The Gelman--Rubin statistic $\hat{R}$ compares
+between-chain variance to within-chain variance across the four parallel chains.
+Formally,
+
+\begin{equation}
+    \hat{R} = \sqrt{\frac{\hat{V}}{W}},
+\end{equation}
+
+\noindent where $W$ is the mean within-chain variance and $\hat{V}$ is a
+weighted combination of $W$ and the between-chain variance $B$. When the chains
+have all converged to the same target distribution, $\hat{R} \to 1$; values
+above 1.01 are conventionally taken as evidence of non-convergence. As reported
+in Table~\ref{tab:seq_posterior}, $\hat{R} = 1.000$ for every parameter in
+every block, confirming that the four chains reached the same posterior
+distribution in all cases.
+
+The effective sample size (ESS) further quantifies sampling quality by
+accounting for autocorrelation between successive draws within each chain.
+It answers the question: how many independent samples would carry the same
+statistical information as the 8{,}000 autocorrelated draws? Across all blocks
+and parameters, bulk ESS ranges from 3{,}792 to 6{,}604, well above the
+conventional threshold of 400. Together, $\hat{R} = 1.000$ and high ESS
+confirm that the sequential posteriors are reliable estimates and not artefacts
+of poor sampling.
+
+\subsection{Results}
+
+Table~\ref{tab:seq_posterior} reports the full posterior summaries for all four
+parameters across the four blocks.
+
+\begin{table}[htbp]
+\centering
+\caption{Sequential posterior summaries. Mean, standard deviation (SD), and
+95\% highest-density credible interval (CrI) for each parameter across the four
+blocks. All $\hat{R} = 1.000$; ESS values are given in parentheses.}
+\label{tab:seq_posterior}
+\small
+\begin{tabular}{clccccc}
+\hline
+Block & Parameter & Mean & SD & 95\% CrI lower & 95\% CrI upper & ESS \\
+\hline
+\multirow{4}{*}{1} 
+  & $\beta_0$ &   110.7 & 274.6 & $-$436.5 &   636.1 & 3792 \\
+  & $\beta_1$ &  7048.0 & 403.7 &  6227.1  &  7800.2 & 4555 \\
+  & $\beta_2$ &  $-$313.0 & 427.1 & $-$1141.5 &   539.1 & 3901 \\
+  & $\sigma$  &   652.3 &  51.4 &   554.3  &   753.7 & 5179 \\
+\hline
+\multirow{4}{*}{2}
+  & $\beta_0$ &   462.3 & 220.5 &    40.9  &   902.8 & 4919 \\
+  & $\beta_1$ &  6343.3 & 322.9 &  5683.0  &  6962.2 & 5145 \\
+  & $\beta_2$ &  $-$248.3 & 299.4 &  $-$836.0 &   338.7 & 5430 \\
+  & $\sigma$  &  1127.3 &  86.4 &   965.5  &  1301.5 & 4959 \\
+\hline
+\multirow{4}{*}{3}
+  & $\beta_0$ &  1214.6 & 165.3 &   910.1  &  1547.6 & 4419 \\
+  & $\beta_1$ &  7405.7 & 288.1 &  6838.4  &  7963.9 & 5060 \\
+  & $\beta_2$ &  $+$180.4 & 250.0 &  $-$297.7 &   686.2 & 4903 \\
+  & $\sigma$  &  1088.4 &  88.4 &   924.5  &  1267.4 & 5544 \\
+\hline
+\multirow{4}{*}{4}
+  & $\beta_0$ &  1490.6 & 141.3 &  1209.0  &  1761.3 & 6420 \\
+  & $\beta_1$ &  7606.9 & 241.6 &  7135.4  &  8076.6 & 6030 \\
+  & $\beta_2$ &  $+$438.5 & 216.3 &    14.1  &   853.0 & 6286 \\
+  & $\sigma$  &  1497.1 & 113.4 &  1279.6  &  1720.1 & 6604 \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsubsection{Cascade Plot}
+
+Figure~\ref{fig:cascade} displays the posterior means and 95\% credible intervals
+for all four parameters across the four sequential blocks.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\textwidth]{figures/cascade_plot.png}
+    \caption{Cascade plot showing the evolution of posterior means (points) and
+    95\% credible intervals (vertical lines) across the four sequential blocks.
+    Darker shading corresponds to later blocks. The progressive narrowing of the
+    intervals for $\beta_1$ and $\sigma$ reflects the accumulation of information,
+    while $\beta_2$ remains uncertain across all blocks due to small-sample and
+    seasonal effects discussed in Section~\ref{sec:ext_discussion}.}
+    \label{fig:cascade}
+\end{figure}
+
+\subsubsection{Density Evolution Plot}
+
+Figure~\ref{fig:density} presents the posterior density curves for all four
+parameters overlaid across the four blocks. This representation makes the
+distributional narrowing more explicit than the interval plot alone.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\textwidth]{figures/density_evolution.png}
+    \caption{Posterior density evolution across the four sequential blocks.
+    Lighter shading corresponds to earlier blocks; darker shading to later ones.
+    The densities for $\beta_0$ and $\beta_1$ progressively concentrate around
+    stable values, demonstrating Bayesian learning. The $\beta_2$ densities shift
+    substantially in location across blocks, reflecting the instability documented
+    in Section~\ref{sec:ext_discussion}.}
+    \label{fig:density}
+\end{figure}
+
+\subsection{Discussion}
+\label{sec:ext_discussion}
+
+\subsubsection{Temperature Coefficient $\beta_1$: Convergence with Increasing Data}
+
+The temperature coefficient $\beta_1$ exhibits the clearest Bayesian learning
+behaviour. Its posterior standard deviation decreases monotonically from 403.7
+in Block 1 to 241.6 in Block 4, a reduction of 40\%, and its 95\% credible
+interval narrows from a width of 1{,}573 to 941. The posterior mean fluctuates
+across blocks (7{,}048 $\to$ 6{,}343 $\to$ 7{,}406 $\to$ 7{,}607) but remains
+entirely positive in all four blocks, confirming that the positive effect of
+temperature on rentals is a consistent finding at the local level.
+
+The Block 4 estimate of 7{,}607 is somewhat higher than the full-data posterior
+mean of approximately 6{,}784 reported in Section~\ref{sec:posterior}. This
+discrepancy is explained by the composition of Block 4 (June--December 2012),
+which has the highest mean daily rentals of any block ($\bar{y} = 6{,}188$),
+more than double that of Block 1 ($\bar{y} = 2{,}773$). Within this high-demand
+summer--autumn period, temperature variation explains a larger share of rental
+variation, inflating the local estimate of $\beta_1$ relative to the full-year
+average.
+
+\subsubsection{Humidity Coefficient $\beta_2$: Small-Sample Noise and Seasonal Effects}
+
+The humidity coefficient $\beta_2$ presents a more complex picture. Its posterior
+mean changes sign from negative in Blocks 1--2 ($-$313, $-$248) to positive in
+Blocks 3--4 ($+$180, $+$438), and the full-data estimate of approximately
+$-$2{,}350 from Section~\ref{sec:posterior} is not recovered at any block.
+Two complementary explanations account for this behaviour.
+
+\textbf{Small-sample noise.} The 95\% credible intervals for $\beta_2$ span zero
+in Blocks 1, 2, and 3 ($[-1142, 539]$, $[-836, 339]$, $[-298, 686]$ respectively),
+indicating that the humidity effect is statistically unresolved within any single
+90-observation window. Only Block 4 yields a credible interval entirely above
+zero ($[14, 853]$), and even this result contradicts the direction established
+by the full dataset. The contrast with $\beta_1$, whose credible interval is
+entirely positive in every block, illustrates that 90 observations are sufficient
+to identify the dominant temperature effect but not the weaker and more
+variable humidity effect.
+
+\textbf{Seasonal variation.} Table~\ref{tab:chunks} reveals genuine heterogeneity
+in the raw correlation between humidity and rentals across blocks
+($r_{yH}$: $+$0.165, $-$0.518, $-$0.054, $-$0.188). Crucially, multicollinearity
+between \texttt{temp} and \texttt{hum} can be ruled out as a confounding factor:
+the between-predictor correlation $r_{TH}$ reaches at most 0.246, which is
+insufficient to cause serious instability in the regression coefficients. Instead,
+the sign reversal of $r_{yH}$ in Block 1 reflects a genuine feature of the
+winter--spring period: rising temperatures and rising humidity co-occur as spring
+approaches, so humidity is locally positively associated with the higher rental
+volumes of warmer months. This local structure differs from the global
+temperature-adjusted humidity effect captured by $\beta_2$ in the full dataset.
+
+The propagation of moment-matched priors compounds this instability: the Block 1
+estimate of $\beta_2 = -313$ is passed as the prior mean to Block 2,
+anchoring its posterior near $-$248 rather than the true value of $-$2{,}350.
+Each subsequent block inherits a prior already displaced from the global estimate,
+and the small within-block samples lack the power to correct the accumulated
+displacement.
+
+\subsubsection{Residual Standard Deviation $\sigma$: Gradual Convergence}
+
+The residual standard deviation $\sigma$ follows an interesting trajectory: its
+posterior mean rises from 652.3 in Block 1 to 1{,}497.1 in Block 4, converging
+closely to the full-data estimate of approximately 1{,}500. Block 1's low estimate
+reflects the reduced variability within a single semi-annual window compared to
+the full two-year span. The moment-matched prior for Block 2 is
+$\operatorname{Half-Normal}(652)$, which places most prior mass below the true
+value but does not prevent the likelihood from pushing $\sigma$ upward toward
+1{,}127. By Block 4, the data have effectively overridden the prior and
+$\sigma$ has converged to the correct magnitude.
+
+\subsubsection{Implications for Bayesian Learning}
+
+The sequential analysis demonstrates two complementary aspects of Bayesian
+learning. For a dominant signal such as the temperature effect, sequential
+updating reliably narrows uncertainty and stabilises estimates even with
+$n = 90$ per block. For a weaker signal such as the humidity effect, the same
+procedure reveals the limits of small-sample inference: local estimates are
+dominated by noise and seasonal confounding, and the propagation of moment-matched
+priors can entrench early estimation errors rather than correcting them. This
+asymmetry highlights an important practical consideration: sequential Bayesian
+updating is most reliable when the parameter of interest is well-identified
+within each individual segment.
