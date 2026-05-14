@@ -1,11 +1,3 @@
-"""
-eda.py — 探索性数据分析与过度离散检验
-
-对子采样数据执行描述性统计、绘制直方图/散点图/热力图，
-并计算 Var/Mean ratio 以论证 Poisson 不适用、应采用 Normal 或 NegBin。
-所有图表保存至 results/figures/，数值结果保存至 results/。
-"""
-
 from __future__ import annotations
 
 import numpy as np
@@ -24,12 +16,10 @@ from src.config import (
 
 
 def load_subsampled(filepath: pd.io.common.PathLike) -> pd.DataFrame:
-    """加载子采样 CSV 文件。"""
     return pd.read_csv(filepath, parse_dates=["dteday"])
 
 
 def summary_statistics(df: pd.DataFrame, save_path: pd.io.common.PathLike) -> pd.DataFrame:
-    """计算 cnt/temp/hum 的描述性统计并保存为 CSV。"""
     stats_df = df[["cnt", "temp", "hum"]].describe(
         percentiles=[0.25, 0.5, 0.75]
     ).T[["mean", "std", "min", "25%", "50%", "75%", "max"]]
@@ -39,7 +29,6 @@ def summary_statistics(df: pd.DataFrame, save_path: pd.io.common.PathLike) -> pd
 
 
 def plot_cnt_histogram(df: pd.DataFrame, save_path: pd.io.common.PathLike) -> None:
-    """绘制 cnt 直方图 + KDE 密度曲线。"""
     fig, ax = plt.subplots(figsize=(8, 5))
     counts = df["cnt"].values
 
@@ -64,7 +53,6 @@ def plot_scatter_with_fit(
     save_path: pd.io.common.PathLike,
     title: str | None = None,
 ) -> None:
-    """绘制散点图 + 线性拟合线，标注斜率和 R²。"""
     fig, ax = plt.subplots(figsize=(8, 5))
     x = df[x_col].values
     y = df[y_col].values
@@ -93,7 +81,6 @@ def plot_scatter_with_fit(
 
 
 def plot_correlation_heatmap(df: pd.DataFrame, save_path: pd.io.common.PathLike) -> None:
-    """绘制所有数值列的相关系数热力图。"""
     numeric_df = df.select_dtypes("number")
     corr = numeric_df.corr()
 
@@ -105,7 +92,6 @@ def plot_correlation_heatmap(df: pd.DataFrame, save_path: pd.io.common.PathLike)
 
 
 def compute_overdispersion_ratio(df: pd.DataFrame, save_path: pd.io.common.PathLike) -> dict:
-    """计算 cnt 的 Var/Mean ratio，写入诊断文本文件。"""
     cnt = df["cnt"]
     mean_cnt = cnt.mean()
     var_cnt = cnt.var()
@@ -134,7 +120,6 @@ def compute_overdispersion_ratio(df: pd.DataFrame, save_path: pd.io.common.PathL
 
 
 def main() -> None:
-    """执行完整 EDA 流程：统计 → 直方图 → 散点图 → 热力图 → 过度离散检验。"""
     logger = setup_logging()
 
     logger.info("Loading subsampled data")
