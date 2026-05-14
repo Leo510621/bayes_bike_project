@@ -2,6 +2,8 @@
 
 ### Bayesian linear regression for daily bike rentals, fitted with NUTS in PyMC 5 on the UCI Bike Sharing dataset.
 
+**A full Bayesian workflow taken seriously: likelihood justified from variance decomposition rather than the marginal var/mean reflex; priors anchored to the empirical scale of the response; three-prior sensitivity analysis quantified by standardised shift; and a sequential-update extension that surfaces a seasonal sign flip the full-sample posterior averages away.**
+
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![PyMC 5](https://img.shields.io/badge/PyMC-5.x-red.svg)](https://www.pymc.io/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -23,9 +25,15 @@ Dataset: UCI [Bike Sharing Dataset](https://archive.ics.uci.edu/dataset/275/bike
 | `temp` (normalised) | 0.486 | 0.182 | 0.097 | 0.476 | 0.849 |
 | `hum` (normalised) | 0.615 | 0.145 | 0.000 | 0.608 | 0.973 |
 
+### How to read this repo
+
+- **2 minutes**: this section and *Headline results* below.
+- **10 minutes**: also read the *Pipeline* diagram and *What's worth flagging*.
+- **Full audit**: `report/Bayes.pdf` walks through every modelling decision in detail, and the four sibling branches (`module-B`, `module-c`, `Module-D`) hold the runnable code.
+
 ### Headline results
 
-A 47 °C swing across the year (the full range of normalised temperature) raises expected daily rentals by about **+6800**. A move from a perfectly dry to a saturated atmosphere lowers them by about **−2350**. Residual scale is **σ ≈ 1500**, around 34% of the mean — calendar effects, holidays, and other weather covariates account for the rest. All four chains converged ($\hat R \le 1.002$, ESSbulk ≥ 3 775, zero divergences).
+A 47 °C swing across the year (the full range of normalised temperature) raises expected daily rentals by about **+6800**. For context, that is roughly a **155% lift** over the sample mean of 4392, making temperature by far the dominant driver in this model. A move from a perfectly dry to a saturated atmosphere lowers expected rentals by about **−2350** (a 54% drop relative to the mean). Residual scale is **σ ≈ 1500**, around 34% of the mean — calendar effects, holidays, and other weather covariates account for the rest. All four chains converged ($\hat R \le 1.002$, ESSbulk ≥ 3 775, zero divergences).
 
 ---
 
@@ -96,7 +104,7 @@ Each downstream module lives on its own branch and consumes the artefacts produc
 $$
 \begin{aligned}
 \beta_0,\beta_1,\beta_2 &\overset{\text{iid}}{\sim} \mathcal{N}(0,\ 10000^2)\\
-\sigma &\sim \mathrm{Half\text{-}Normal}(3000)\\
+\sigma &\sim \text{Half-Normal}(3000)\\
 \mu_i &= \beta_0 + \beta_1\,\mathrm{temp}_i + \beta_2\,\mathrm{hum}_i\\
 \mathrm{cnt}_i \mid \mu_i, \sigma &\sim \mathcal{N}(\mu_i,\ \sigma^2),\quad i = 1,\dots,360
 \end{aligned}
@@ -209,7 +217,7 @@ We sort the 360 observations by date and split them into four blocks of 90, one 
 
 $$
 \beta_j \mid \text{Block }k+1 \sim \mathcal{N}\!\left(\mu_k^{(j)},\ (s_k^{(j)})^2\right), \qquad
-\sigma \mid \text{Block }k+1 \sim \mathrm{Half\text{-}Normal}\!\left(\frac{\mu_k^{(\sigma)}}{\sqrt{2/\pi}}\right)
+\sigma \mid \text{Block }k+1 \sim \text{Half-Normal}\!\left(\frac{\mu_k^{(\sigma)}}{\sqrt{2/\pi}}\right)
 $$
 
 ![](https://github.com/Leo510621/bayes_bike_project/raw/Module-A/results/figures/cascade_plot.png)
