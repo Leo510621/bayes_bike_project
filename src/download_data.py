@@ -1,11 +1,3 @@
-"""
-download_data.py — UCI Bike Sharing 数据集下载工具
-
-从 UCI 官方仓库下载 Bike Sharing Dataset 的 zip 包，
-解压出 day.csv 并校验行数、列名、缺失值。
-支持主/备 URL 自动切换，已存在且合法时跳过下载。
-"""
-
 from __future__ import annotations
 
 import logging
@@ -21,7 +13,6 @@ import pandas as pd
 
 from src.config import DATA_DIR, setup_logging
 
-# --- 下载源 ---
 DATA_URL_PRIMARY = (
     "https://archive.ics.uci.edu/static/public/275/bike+sharing+dataset.zip"
 )
@@ -38,7 +29,6 @@ EXPECTED_COLUMNS = [
 
 
 def download_zip(url: str, dest_path: Path) -> Path:
-    """从指定 URL 下载 zip 文件到 dest_path。"""
     logger = logging.getLogger("bayes_bike")
     logger.info("Downloading from %s", url)
 
@@ -63,7 +53,6 @@ def download_zip(url: str, dest_path: Path) -> Path:
 
 
 def extract_day_csv(zip_path: Path, output_dir: Path) -> Path:
-    """从 zip 包中解压 day.csv 到 output_dir。"""
     logger = logging.getLogger("bayes_bike")
     output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -86,7 +75,6 @@ def extract_day_csv(zip_path: Path, output_dir: Path) -> Path:
 
 
 def validate_download(csv_path: Path) -> None:
-    """校验下载的 CSV：文件存在、731 行、16 列齐全、无缺失。"""
     assert csv_path.exists(), f"File not found: {csv_path}"
 
     df = pd.read_csv(csv_path)
@@ -104,7 +92,6 @@ def validate_download(csv_path: Path) -> None:
 def download_with_fallback(
     primary_url: str, fallback_url: str, dest_path: Path
 ) -> Path:
-    """尝试主 URL，失败后自动切换备用 URL。"""
     logger = logging.getLogger("bayes_bike")
 
     try:
@@ -124,7 +111,6 @@ def download_with_fallback(
 
 
 def main() -> None:
-    """下载 day.csv（若已存在且合法则跳过）。"""
     logger = setup_logging()
     csv_path = DATA_DIR / "day.csv"
 
