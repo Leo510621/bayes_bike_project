@@ -72,7 +72,7 @@ class TestMakePriorParams:
         assert params["beta0"] == (BETA_PRIOR_MEAN, BETA_PRIOR_SD)
         assert params["beta1"] == (BETA_PRIOR_MEAN, BETA_PRIOR_SD)
         assert params["beta2"] == (BETA_PRIOR_MEAN, BETA_PRIOR_SD)
-        assert params["sigma_scale"] == SIGMA_PRIOR_SCALE
+        assert params["sigma_scale"] == 3000.0
 
     def test_chunk1_inherits_prev_posterior(self):
         """第2块的先验必须来自第1块的后验mean/sd。"""
@@ -86,8 +86,8 @@ class TestMakePriorParams:
         assert params["beta0"] == (2500.0, 380.0)
         assert params["beta1"] == (6800.0, 440.0)
         assert params["beta2"] == (-2300.0, 560.0)
-        assert params["sigma_scale"] == 1500.0
-
+        assert params["sigma_scale"] == pytest.approx(1500.0 / np.sqrt(2 / np.pi))
+        
     def test_sigma_scale_always_positive(self):
         """sigma_scale必须恒正，HalfNormal不接受负数。"""
         prev = {

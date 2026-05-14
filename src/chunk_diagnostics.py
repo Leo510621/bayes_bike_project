@@ -1,15 +1,9 @@
-"""
-chunk_diagnostics.py — 计算各块描述性统计、相关系数，并合并β₂后验CrI
-输出 results/chunk_diagnostics.csv
-用法：python -m src.chunk_diagnostics
-"""
-
 import pandas as pd
 from src.config import DATA_DIR, RESULTS_DIR, SUBSAMPLED_FILE, CHUNK_SIZE, N_CHUNKS, SEQUENTIAL_TABLE_FILE
 
 
 def main():
-    # 数据统计
+
     df = pd.read_csv(DATA_DIR / SUBSAMPLED_FILE, parse_dates=["dteday"])
     chunks = [df.iloc[i*CHUNK_SIZE:(i+1)*CHUNK_SIZE] for i in range(N_CHUNKS)]
 
@@ -30,7 +24,7 @@ def main():
 
     diag = pd.DataFrame(rows)
 
-    # 从posterior table提取β₂的CrI
+
     post = pd.read_csv(RESULTS_DIR / SEQUENTIAL_TABLE_FILE)
     beta2 = post[post["parameter"] == "beta_2_hum"][
         ["chunk", "mean", "ci_lower", "ci_upper"]
