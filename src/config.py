@@ -31,11 +31,19 @@ RANDOM_SEED = 42
 
 TRACE_FILE = "trace.nc"
 POSTERIOR_TABLE_FILE = "posterior_table.csv"
+SEQUENTIAL_TABLE_FILE = "sequential_posterior_table.csv"
 
 N_CHAINS = 4
 N_TUNE = 1000
 N_DRAWS = 2000
 TARGET_ACCEPT = 0.95
+
+BETA_PRIOR_MEAN = 0.0
+BETA_PRIOR_SD = 10000.0
+SIGMA_PRIOR_SCALE = 3000.0
+
+N_CHUNKS = 4
+CHUNK_SIZE = 90
 
 np.random.seed(RANDOM_SEED)
 

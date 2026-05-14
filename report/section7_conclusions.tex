@@ -1,0 +1,72 @@
+\section{Conclusions}
+\label{sec:conclusions}
+
+This report applied Bayesian linear regression to model daily bike-sharing demand
+as a function of normalised temperature and humidity, using 360 chronologically
+subsampled observations from the UCI Bike Sharing Dataset
+(\texttt{random\_state = 42}).
+
+\textbf{Likelihood and model specification.} The Normal likelihood was selected
+over Poisson on the basis of severe overdispersion (Var/Mean $\approx 853$) and
+the approximate symmetry of the empirical rental distribution. The two-predictor
+model $\text{cnt}_i \sim \mathcal{N}(\beta_0 + \beta_1\,\text{temp}_i +
+\beta_2\,\text{hum}_i,\,\sigma^2)$ was fitted with weakly informative Normal
+priors ($\sigma = 10{,}000$) on regression coefficients and a Half-Normal prior
+(scale $= 3{,}000$) on the residual standard deviation, ensuring that the
+posterior was data-dominated.
+
+\textbf{Posterior inference and frequentist comparison.} NUTS sampling with four
+chains produced 8{,}000 posterior draws with $\hat{R} = 1.000$ and bulk
+ESS $> 3{,}500$ for all parameters, confirming reliable convergence. Temperature
+is the dominant predictor (posterior mean $\hat{\beta}_1 \approx 6{,}784$;
+95\% CrI wholly positive), while humidity exerts a credibly negative effect
+(posterior mean $\hat{\beta}_2 \approx -2{,}350$; 95\% CrI wholly negative).
+Posterior means agree with OLS point estimates to within 1\%, and credible
+intervals are nearly indistinguishable in width from the corresponding
+frequentist 95\% confidence intervals. This near-coincidence reflects the
+dominance of the likelihood under the weakly informative prior at $n = 360$,
+while the two frameworks remain conceptually distinct: the Bayesian credible
+interval carries a direct probability statement about the parameter, whereas
+the frequentist confidence interval is a repeated-sampling construct.
+
+\textbf{Sampler behaviour.} Trace plots showed stable mixing with no trends
+or drifts, and all four chains overlapped throughout sampling. Burn-in of
+1{,}000 warm-up steps was sufficient for the sampler to reach the stationary
+distribution, as confirmed by $\hat{R} = 1.000$ and ESS $> 3{,}500$ for all
+parameters.
+
+\textbf{Prior sensitivity.} The sensitivity analysis confirmed that the posterior
+is robust to substantial changes in prior specification. Together with the close
+agreement between the Bayesian and frequentist estimates, this indicates that
+360 observations provide sufficient information to overwhelm moderate variations
+in prior beliefs.
+
+\textbf{Sequential Bayesian updating.} The extension task partitioned the data
+into four chronological blocks of 90 observations and cascaded posteriors as
+priors via moment matching. Several findings emerged. First, the temperature
+coefficient $\beta_1$ converged reliably across blocks: its posterior standard
+deviation fell by 40\% from Block 1 (403.7) to Block 4 (241.6), and its
+credible interval remained wholly positive throughout, confirming the robustness
+of the temperature signal. Second, the humidity coefficient $\beta_2$ proved
+difficult to identify within individual 90-observation windows: credible intervals
+spanned zero in three of four blocks, and the posterior mean changed sign between
+blocks. This instability was attributed to two factors --- small-sample noise
+insufficient to resolve a weaker signal, and genuine seasonal variation in the
+local temperature--humidity--rental relationship --- rather than
+multicollinearity, which was ruled out by between-predictor correlations no
+greater than 0.246 in any block. Third, the residual standard deviation $\sigma$
+converged from an initial estimate of 652 in Block 1 to 1{,}497 in Block 4,
+closely matching the full-data estimate and demonstrating that the likelihood
+eventually overrides an initially displaced prior. These results highlight an
+important asymmetry in sequential updating: dominant signals are reliably learned
+block by block, while weaker signals require larger individual segments or more
+informative starting priors to avoid entrenchment of early estimation errors.
+
+\textbf{Limitations and future directions.} The two-predictor model deliberately
+omits season, weekday, and holiday effects that account for the remaining 60\%
+of unexplained variance ($R^2 = 0.405$). Future work could incorporate these
+covariates, adopt a Negative Binomial likelihood to address residual
+overdispersion, or employ a hierarchical structure to share information across
+seasonal strata. For the sequential analysis specifically, larger block sizes
+or more informative priors derived from domain knowledge about humidity effects
+would mitigate the small-sample instability observed for $\beta_2$.
