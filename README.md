@@ -2,12 +2,6 @@
 
 Focus on extension task C: Sequential Bayesian Updating.
 
-**Module D (Ke)** is responsible for:
-- Extension Task C: Sequential Bayesian Updating across 4 chronological chunks
-- Chunk diagnostic statistics
-- Report sections: §6 Extension Task, §7 Conclusions
-- Report integration
-
 ## Reproduction
 
 ```bash
