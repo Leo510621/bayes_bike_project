@@ -1,10 +1,10 @@
 """
-test_model_pymc.py — Module B 模型代码的快速单元测试
+test_model_pymc.py — Fast Unit Tests for Module B Model Code
 
-不跑完整 MCMC（耗时数分钟），只验证：
-- 先验超参数符合预期数值（防误改）
-- define_priors 在 PyMC 上下文中能正确创建 4 个变量
-- build_model 在合成数据上能成功构建模型对象
+Does NOT run full MCMC (takes minutes), only validates:
+- Prior hyperparameters match expected values (prevent accidental changes)
+- define_priors correctly creates 4 variables in a PyMC context
+- build_model successfully constructs a model object with synthetic data
 """
 
 from __future__ import annotations
@@ -21,34 +21,29 @@ from src.priors import (
 )
 
 
-
-# 先验超参数硬编码检查
-
+# Hard-coded checks for prior hyperparameters
 
 def test_prior_hyperparameters() -> None:
-    """先验超参数应符合 §2.2 报告中声明的数值。"""
+    """Prior hyperparameters must match the values declared in Report §2.2."""
     assert BETA_PRIOR_MEAN == 0.0
     assert BETA_PRIOR_SD == 10000.0
     assert SIGMA_PRIOR_SCALE == 3000.0
 
 
-
-# define_priors 行为
-
+# Behavior of define_priors
 
 def test_define_priors_returns_four_variables() -> None:
-    """先验函数应返回 4 个变量。"""
+    """The prior function must return exactly 4 variables."""
     with pm.Model():
         priors = define_priors()
     assert set(priors.keys()) == {"beta0", "beta1", "beta2", "sigma"}
 
 
-
-# build_model 行为
+# Behavior of build_model
 
 @pytest.fixture
 def fake_data():
-    """构造合成数据用于模型构建测试。"""
+    """Generate synthetic data for testing model construction."""
     rng = np.random.default_rng(0)
     n = 100
     return {
@@ -59,7 +54,7 @@ def fake_data():
 
 
 def test_build_model_returns_pymc_model(fake_data) -> None:
-    """build_model 应返回 pm.Model 对象，且包含 4 个未观测随机变量。"""
+    """build_model must return a valid pm.Model instance containing 4 unobserved random variables."""
     from src.model_pymc import build_model
 
     model = build_model(fake_data["cnt"], fake_data["temp"], fake_data["hum"])
